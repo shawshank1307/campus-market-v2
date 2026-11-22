@@ -1,0 +1,18 @@
+// Test deployment — separate worker and database from production.
+//   npx wrangler deploy -c wrangler.test.jsonc
+// Secrets (set once):  RESEND_API_KEY, ALLOWED_TEST_EMAILS
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "campus-market-v2-test",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-07-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "campus-market-v2-test-db",
+      "database_id": "99d457ea-eee9-49a1-b33a-67b2273590d5"
+    }
+  ],
+  "observability": { "enabled": true }
+}

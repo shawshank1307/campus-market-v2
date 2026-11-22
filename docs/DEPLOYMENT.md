@@ -104,6 +104,31 @@ export const PRODUCTION_API_URL = "https://campus-market-backend.<you>.workers.d
 
 ---
 
+## Test deployment (separate from production)
+
+`cloudflare-backend/wrangler.test.jsonc` deploys a **second worker with its own database**, so you can try everything live without touching production.
+
+```bash
+cd cloudflare-backend
+npx wrangler d1 create campus-market-v2-test-db          # put the id in wrangler.test.jsonc
+npx wrangler d1 execute campus-market-v2-test-db --remote --file=schema.sql -c wrangler.test.jsonc
+npx wrangler deploy -c wrangler.test.jsonc
+npx wrangler secret put RESEND_API_KEY -c wrangler.test.jsonc
+npx wrangler secret put ALLOWED_TEST_EMAILS -c wrangler.test.jsonc   # e.g. your own Gmail
+```
+
+Until a domain is verified in Resend, emails can only go to the Resend account's own address — which usually isn't a college email. `ALLOWED_TEST_EMAILS` lets exactly those addresses sign up on the test deployment.
+
+Deploy the site to Cloudflare Pages pointed at the test worker (without changing `config.js` in git):
+
+```bash
+mkdir -p /tmp/site && cp -R index.html css js assets /tmp/site/
+sed -i '' 's|PRODUCTION_API_URL = ".*"|PRODUCTION_API_URL = "https://campus-market-v2-test.<you>.workers.dev"|' /tmp/site/js/config.js
+npx wrangler pages deploy /tmp/site --project-name campus-market-v2-test --branch main
+```
+
+---
+
 ## Deploy the frontend
 
 ### GitHub Pages

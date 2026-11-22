@@ -9,6 +9,8 @@ type Bindings = {
   EMAIL_FROM?: string;
   /** "1" = also return codes in API responses. Local development only — never in production. */
   DEMO_OTP?: string;
+  /** Comma-separated non-college emails allowed to sign up (test deployments only). */
+  ALLOWED_TEST_EMAILS?: string;
 };
 
 type Variables = {
@@ -36,6 +38,13 @@ const COLLEGE_EMAIL_RE = /^[a-zA-Z0-9._%+-]+@(?!gmail\.com|yahoo\.com|hotmail\.c
 
 function validateCollegeEmail(email: string): boolean {
   return COLLEGE_EMAIL_RE.test(email || '');
+}
+
+/** College emails, plus any explicitly allow-listed test addresses. */
+function isAllowedEmail(env: Bindings, email: string): boolean {
+  if (validateCollegeEmail(email)) return true;
+  const allowed = (env.ALLOWED_TEST_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return allowed.includes((email || '').toLowerCase());
 }
 
 // ---- Passwords: PBKDF2-SHA256, stored as pbkdf2$<iter>$<salt b64>$<hash b64> ----
@@ -387,7 +396,7 @@ app.post('/api/auth/signup', async (c) => {
   if (!name || !rollNumber || !phone || !collegeEmail || !campus) {
     return c.json({ error: 'All fields are required.' }, 400);
   }
-  if (!validateCollegeEmail(collegeEmail)) {
+  if (!isAllowedEmail(c.env, collegeEmail)) {
     return c.json({ error: 'Use a valid college email (.edu or .ac.in).' }, 400);
   }
   if (!emailConfigured(c.env)) {
@@ -455,7 +464,7 @@ app.post('/api/auth/send-otp', async (c) => {
   const json = await c.req.json().catch(() => ({}));
   const collegeEmail = String(json.collegeEmail || '').trim().toLowerCase();
 
-  if (!validateCollegeEmail(collegeEmail)) {
+  if (!isAllowedEmail(c.env, collegeEmail)) {
     return c.json({ error: 'Invalid college email.' }, 400);
   }
 

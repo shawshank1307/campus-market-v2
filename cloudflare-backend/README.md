@@ -29,6 +29,7 @@ Test it from the repo root: `node tests/worker.e2e.mjs http://127.0.0.1:8787` (3
 | `RESEND_API_KEY` | **secret** | Sends verification codes — `npx wrangler secret put RESEND_API_KEY` |
 | `EMAIL_FROM` | var | Sender, e.g. `Campus Market <noreply@your-domain.com>` |
 | `DEMO_OTP` | var | `1` returns codes in responses. **Local development only.** |
+| `ALLOWED_TEST_EMAILS` | secret | Comma-separated non-college emails allowed to sign up — for test deployments, e.g. while Resend can only email your own address |
 
 Without `RESEND_API_KEY` or `DEMO_OTP`, sign-up and code requests return `503` instead of leaking codes.
 
