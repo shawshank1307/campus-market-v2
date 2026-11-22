@@ -1,20 +1,33 @@
-# Contributing to JKLU Swap
+# Contributing to Campus Market
 
-Thanks for your interest in JKLU Swap!
+Thanks for helping make campus trading easier!
 
-## How to contribute
+## Getting started
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Commit your changes
-4. Open a pull request
+```bash
+python3 -m http.server 5500      # site on http://localhost:5500 (demo mode)
+```
 
-## Local development
+To work on the API, see [Run the API locally](docs/DEPLOYMENT.md#run-the-api-locally).
 
-See the [README](README.md#run-locally) for setup instructions.
+## Ground rules
 
-## Code style
+- **Keep it build-free.** Plain HTML, CSS and ES modules — no frameworks or bundlers in the frontend.
+- **Change both backends.** `js/local-api.js` (demo) must mirror `cloudflare-backend/src/index.ts` — same routes, rules and error messages.
+- **Escape everything** from users with `escapeHtml()`, and image sources with `safeSrc()`.
+- **Respect reduced motion** for any new animation.
+- **Database changes** need a new numbered file in `cloudflare-backend/migrations/` *and* an update to `schema.sql`.
 
-- Keep JavaScript vanilla — no build step required
-- Match existing naming and file structure
-- Test locally with `python app.py` in the `backend/` folder
+## Before opening a pull request
+
+```bash
+npm test                                          # demo backend
+node tests/worker.e2e.mjs http://127.0.0.1:8787   # API (with wrangler dev running)
+npm run test:ui                                   # browser journeys
+```
+
+Then:
+
+1. Create a branch (`git checkout -b feature/my-feature`).
+2. Commit with a clear message.
+3. Open a pull request describing what changed and how you tested it.

@@ -1,5 +1,5 @@
-const MAX_SIZE = 1200;
-const JPEG_QUALITY = 0.88;
+const MAX_SIZE = 1000;
+const JPEG_QUALITY = 0.8;
 const BG_COLOR = "#ffffff";
 
 /**

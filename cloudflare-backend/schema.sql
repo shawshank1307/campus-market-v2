@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   roll_number TEXT NOT NULL UNIQUE,
   phone TEXT NOT NULL,
   college_email TEXT NOT NULL UNIQUE,
-  campus TEXT NOT NULL DEFAULT 'JKLU Campus',
+  campus TEXT NOT NULL DEFAULT 'Main Campus',
   id_card_path TEXT NOT NULL,
   id_card_data TEXT,
   email_verified INTEGER NOT NULL DEFAULT 0,
@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS otp_codes (
   college_email TEXT PRIMARY KEY,
   code TEXT NOT NULL,
-  expires_at REAL NOT NULL
+  expires_at REAL NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS listings (
@@ -39,6 +40,11 @@ CREATE TABLE IF NOT EXISTS listings (
   campus TEXT NOT NULL,
   emoji TEXT,
   image TEXT,
+  images TEXT,
+  course_code TEXT,
+  meetup_spot TEXT,
+  negotiable INTEGER NOT NULL DEFAULT 0,
+  sale_tag TEXT,
   status TEXT NOT NULL DEFAULT 'active',
   created_at REAL NOT NULL,
   FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
@@ -79,15 +85,75 @@ CREATE TABLE IF NOT EXISTS transactions (
   FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS saved_listings (
+  user_id INTEGER NOT NULL,
+  listing_id TEXT NOT NULL,
+  created_at REAL NOT NULL,
+  PRIMARY KEY (user_id, listing_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  listing_id TEXT NOT NULL,
+  reporter_id INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  details TEXT,
+  created_at REAL NOT NULL,
+  UNIQUE (listing_id, reporter_id),
+  FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE,
+  FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- listing_id has no foreign key so ratings survive when a listing is deleted.
+CREATE TABLE IF NOT EXISTS ratings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  listing_id TEXT NOT NULL,
+  seller_id INTEGER NOT NULL,
+  rater_id INTEGER NOT NULL,
+  stars INTEGER NOT NULL CHECK (stars BETWEEN 1 AND 5),
+  comment TEXT,
+  created_at REAL NOT NULL,
+  UNIQUE (listing_id, rater_id),
+  FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (rater_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_ratings_seller ON ratings(seller_id);
+
+CREATE TABLE IF NOT EXISTS wanted_posts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  budget REAL,
+  category TEXT NOT NULL DEFAULT 'other',
+  course_code TEXT,
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at REAL NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS conversation_reads (
+  conversation_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  last_read_at REAL NOT NULL,
+  PRIMARY KEY (conversation_id, user_id),
+  FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at);
+
 -- Seed Initial Demo User & Listings
 INSERT OR IGNORE INTO users (id, name, roll_number, phone, college_email, campus, id_card_path, email_verified, id_verified, created_at)
-VALUES (1, 'Demo Seller', 'DEMO001', '9999999999', 'demo@jklu.edu.in', 'JKLU Campus', 'seed.jpg', 1, 1, strftime('%s', 'now'));
+VALUES (1, 'Demo Seller', 'DEMO001', '9999999999', 'demo@college.edu.in', 'Main Campus', 'seed.jpg', 1, 1, strftime('%s', 'now'));
 
 INSERT OR IGNORE INTO listings (id, seller_id, title, description, price, category, condition, campus, emoji, status, created_at)
 VALUES
-  ('1', 1, 'Engineering Mathematics — Grewal', 'Used for B.Tech Sem 1. Minimal highlighting.', 350, 'textbooks', 'Good', 'JKLU Campus', '📚', 'active', strftime('%s', 'now') - 172800),
-  ('2', 1, 'MacBook Air M1 — Perfect for CSE', 'Battery health 92%. Comes with charger.', 45000, 'electronics', 'Like New', 'JKLU Campus', '💻', 'active', strftime('%s', 'now') - 86400),
-  ('3', 1, 'Study Desk + Chair — Hostel Ready', 'Compact desk with chair.', 2500, 'furniture', 'Good', 'JKLU Campus', '🛋️', 'active', strftime('%s', 'now') - 345600),
-  ('4', 1, 'DSA & OS Tutoring — ₹300/hr', 'CSE 3rd year. Evenings at JKLU campus.', 300, 'services', 'Like New', 'JKLU Campus', '🛠️', 'active', strftime('%s', 'now') - 43200),
-  ('5', 1, 'JKLU Hoodie — Size M', 'Official JKLU merch, worn twice.', 800, 'clothing', 'Like New', 'JKLU Campus', '👕', 'active', strftime('%s', 'now') - 259200),
-  ('6', 1, 'Mini Fridge for Hostel Room', 'Works perfectly. Quiet compressor.', 3500, 'other', 'Good', 'JKLU Campus', '📦', 'active', strftime('%s', 'now') - 432000);
+  ('1', 1, 'Engineering Mathematics — Grewal', 'Used for B.Tech Sem 1. Minimal highlighting.', 350, 'textbooks', 'Good', 'Main Campus', '📚', 'active', strftime('%s', 'now') - 172800),
+  ('2', 1, 'MacBook Air M1 — Perfect for CSE', 'Battery health 92%. Comes with charger.', 45000, 'electronics', 'Like New', 'Main Campus', '💻', 'active', strftime('%s', 'now') - 86400),
+  ('3', 1, 'Study Desk + Chair — Hostel Ready', 'Compact desk with chair.', 2500, 'furniture', 'Good', 'Main Campus', '🛋️', 'active', strftime('%s', 'now') - 345600),
+  ('4', 1, 'DSA & OS Tutoring — ₹300/hr', 'CSE 3rd year. Evenings on campus.', 300, 'services', 'Like New', 'Main Campus', '🛠️', 'active', strftime('%s', 'now') - 43200),
+  ('5', 1, 'College Hoodie — Size M', 'Official college merch, worn twice.', 800, 'clothing', 'Like New', 'Main Campus', '👕', 'active', strftime('%s', 'now') - 259200),
+  ('6', 1, 'Mini Fridge for Hostel Room', 'Works perfectly. Quiet compressor.', 3500, 'other', 'Good', 'Main Campus', '📦', 'active', strftime('%s', 'now') - 432000);

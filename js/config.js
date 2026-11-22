@@ -25,12 +25,5 @@ export function photoUrl(photo) {
   return window.matchMedia("(max-width: 768px)").matches ? photo.srcMd : photo.src;
 }
 
-/** Live backend API — Powered by Cloudflare Workers & D1 Edge Backend */
+/** Production API (Cloudflare Workers + D1). Change this after deploying your own worker. */
 export const PRODUCTION_API_URL = "https://campus-market-backend.shawshank1307.workers.dev";
-/** Supabase Configuration */
-export const SUPABASE = {
-  projectRef: "ackxmxvencvkcbxvfvev",
-  url: "https://ackxmxvencvkcbxvfvev.supabase.co",
-  anonKey:
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFja3hteHZlbmN2a2NieHZmdmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNjAwNjksImV4cCI6MjEwNjkzNjA2OX0.2tA0OFHU5N452bJJkGJt-SNs-UAFZWPyPlpbM4LWIyw",
-};

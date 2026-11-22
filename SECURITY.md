@@ -1,19 +1,23 @@
-# Security Policy
+# Security policy
 
 ## Reporting a vulnerability
 
-If you discover a security issue in JKLU Swap, please report it responsibly:
+Please **don't** open a public issue for security problems. Instead, contact the maintainer privately through their GitHub profile ([@shawshank1307](https://github.com/shawshank1307)) with steps to reproduce. We aim to respond within 7 days.
 
-1. **Do not** open a public GitHub issue for security vulnerabilities.
-2. Email the maintainer via GitHub profile: [@shawshank1307](https://github.com/shawshank1307)
-3. Include steps to reproduce and any relevant logs.
+## How Campus Market protects students
 
-We aim to respond within 7 days.
+The full design is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#security-design). In short:
 
-## Scope
+- **Passwords** are hashed with PBKDF2-SHA256 (100,000 iterations, random salt) and compared in constant time.
+- **Verification codes** are only ever emailed in production, expire in 10 minutes, are rate-limited, and are destroyed after 5 wrong attempts.
+- **Resetting a password** signs the account out everywhere.
+- **All user content is escaped** before rendering, including inside HTML attributes; image sources are restricted to uploaded photos and `https` URLs. A browser test checks this on every run.
+- **Only verified students** can list, message, rate, report or see contact details.
+- **Abuse controls**: ratings require a real interaction, and three reports hide a listing automatically.
 
-- Authentication and session handling
-- File upload validation
-- API input validation
+## Operator checklist
 
-Thank you for helping keep JKLU Swap safe for students.
+- [ ] `RESEND_API_KEY` is set as a Wrangler **secret** (not in `wrangler.jsonc`).
+- [ ] `DEMO_OTP` is **not** set in production.
+- [ ] Sample data from `schema.sql` has been removed.
+- [ ] D1 backups are exported before running migrations.

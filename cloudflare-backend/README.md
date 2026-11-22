@@ -1,120 +1,37 @@
-# Campus Market — Cloudflare Workers & D1 Edge Backend
+# Campus Market API — Cloudflare Workers + D1
 
-High-performance, edge-deployed serverless REST API for Campus Market built with **Cloudflare Workers**, **Hono**, and **Cloudflare D1** (distributed SQLite at the edge).
-
-## 🚀 Why Cloudflare Workers & D1?
-
-- **Ultra-low latency**: Global edge network with <10ms response times worldwide.
-- **Zero cold starts**: Unlike Render free tier which sleeps and takes 50+ seconds to spin up, Cloudflare Workers start instantly (0ms).
-- **Global edge database**: Cloudflare D1 brings SQLite databases directly to the edge next to the user.
-- **Generous Free Tier**: 100,000 requests/day, 5M D1 reads/day completely free.
-
----
-
-## 🛠️ Project Structure
+The production API for Campus Market: [Hono](https://hono.dev) running on Cloudflare Workers, with Cloudflare D1 (SQLite) for storage and [Resend](https://resend.com) for verification emails.
 
 ```
-cloudflare-backend/
-├── src/
-│   └── index.ts          # Complete Hono API (Auth, Listings, Chat, Payments, Health)
-├── schema.sql            # D1 database schema with initial seed data
-├── wrangler.jsonc        # Cloudflare Wrangler configuration
-├── package.json
-└── tsconfig.json
+src/index.ts        Every route (auth, listings, saved, reports, ratings, wanted, messages, payments)
+schema.sql          Full schema + sample data for a fresh database
+migrations/         Upgrades for existing databases — apply in order
+wrangler.jsonc      Worker + D1 binding config
+.dev.vars.example   Local-only settings (copy to .dev.vars)
 ```
 
----
-
-## 💻 Local Development
-
-### 1. Initialize Local D1 Database
-Execute the schema and initial seed listings on the local Miniflare D1 database:
+## Local development
 
 ```bash
-cd cloudflare-backend
+npm install
+cp .dev.vars.example .dev.vars     # DEMO_OTP=1 → codes returned in API responses (local only!)
 npm run db:init:local
+npx wrangler dev                   # http://localhost:8787
 ```
 
-### 2. Start Local Worker Dev Server
-Start the local Worker on `http://localhost:8787`:
+Test it from the repo root: `node tests/worker.e2e.mjs http://127.0.0.1:8787` (31 checks).
 
-```bash
-npm run dev
-```
+## Configuration
 
-Test the health endpoint:
-```bash
-curl http://localhost:8787/api/health
-```
+| Name | Type | Purpose |
+|---|---|---|
+| `DB` | D1 binding | The database (`wrangler.jsonc`) |
+| `RESEND_API_KEY` | **secret** | Sends verification codes — `npx wrangler secret put RESEND_API_KEY` |
+| `EMAIL_FROM` | var | Sender, e.g. `Campus Market <noreply@your-domain.com>` |
+| `DEMO_OTP` | var | `1` returns codes in responses. **Local development only.** |
 
----
+Without `RESEND_API_KEY` or `DEMO_OTP`, sign-up and code requests return `503` instead of leaking codes.
 
-## 🌐 Deploying to Cloudflare (Step-by-Step)
+## Deploying
 
-### Step 1: Login to Cloudflare
-In your terminal, authorize Wrangler with your Cloudflare account:
-
-```bash
-npx wrangler login
-```
-*(This opens a browser tab for one-click authorization).*
-
-### Step 2: Create Remote D1 Database
-Create the production D1 database on your Cloudflare account:
-
-```bash
-npx wrangler d1 create campus-market-db
-```
-
-Wrangler will output the `database_id`. Open `wrangler.jsonc` and paste your `database_id`:
-
-```jsonc
-"d1_databases": [
-  {
-    "binding": "DB",
-    "database_name": "campus-market-db",
-    "database_id": "<PASTE-YOUR-DATABASE-ID-HERE>"
-  }
-]
-```
-
-### Step 3: Run Database Migrations on Cloudflare
-Execute the schema and seed data on the production database:
-
-```bash
-npm run db:init:remote
-```
-
-### Step 4: Deploy the Worker
-Deploy the API to Cloudflare edge:
-
-```bash
-npm run deploy
-```
-
-You will get an instant live URL such as:
-```
-https://campus-market-backend.<your-subdomain>.workers.dev
-```
-
----
-
-## 🌍 Connecting a Free Domain (DigitalPlat FreeDomain)
-
-To connect a free custom domain using [DigitalPlat FreeDomain](https://github.com/DigitalPlatDev/FreeDomain):
-
-1. **Claim your free domain**:
-   - Go to [DigitalPlat FreeDomain Dashboard](https://dash.domain.digitalplat.org/).
-   - Register a free domain with your preferred extension (`.dpdns.org`, `.us.kg`, `.qzz.io`, `.xx.kg`, `.qd.je`).
-2. **Add to Cloudflare**:
-   - In your [Cloudflare Dashboard](https://dash.cloudflare.com/), click **Add site** and enter your registered free domain.
-   - Cloudflare will provide two nameservers (e.g. `adam.ns.cloudflare.com` and `eve.ns.cloudflare.com`).
-   - In DigitalPlat FreeDomain dashboard, update your domain's Custom Nameservers to Cloudflare's nameservers.
-3. **Bind to your Worker**:
-   - In Cloudflare Dashboard, navigate to **Compute (Workers) > campus-market-backend > Settings > Domains & Routes**.
-   - Click **Add Custom Domain** and enter e.g. `api.yourdomain.dpdns.org`.
-4. **Update Frontend Configuration**:
-   - In `campus-market/js/config.js`, update `PRODUCTION_API_URL` with your new custom domain or `workers.dev` URL:
-     ```javascript
-     export const PRODUCTION_API_URL = "https://api.yourdomain.dpdns.org";
-     ```
+See the [deployment guide](../docs/DEPLOYMENT.md). Full endpoint docs: [API reference](../docs/API.md).

@@ -1,0 +1,16 @@
+{
+  "name": "campus-market",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Campus Market — a verified student marketplace (static frontend + Cloudflare Workers API)",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 5500",
+    "test": "node tests/demo-backend.test.mjs",
+    "test:worker": "node tests/worker.e2e.mjs",
+    "test:ui": "node tests/ui.test.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.49.1"
+  }
+}

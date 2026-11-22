@@ -14,18 +14,39 @@ export { CAMPUSES };
 
 export const CONDITIONS = ["Like New", "Good", "Fair", "Used"];
 
+/** Safe, public places on campus to hand over items. */
+export const MEETUP_SPOTS = [
+  "Library",
+  "Main canteen",
+  "Academic block entrance",
+  "Main gate",
+  "Hostel reception",
+  "Sports complex",
+];
+
+export const REPORT_REASONS = [
+  { id: "spam", label: "Spam or duplicate" },
+  { id: "fake", label: "Looks fake or a scam" },
+  { id: "prohibited", label: "Not allowed on campus" },
+  { id: "wrong-info", label: "Wrong price or details" },
+  { id: "other", label: "Something else" },
+];
+
 export const SAMPLE_LISTINGS = [
   {
     id: "1",
     title: "Engineering Mathematics — Grewal",
     description:
-      "Used for B.Tech Sem 1. Minimal highlighting. Pick up near IET block near the academic block.",
+      "Used for B.Tech Sem 1. Minimal highlighting. Pick up near the IET block.",
     price: 350,
     category: "textbooks",
     condition: "Good",
     campus: SITE.campus,
     sellerName: "Priya S.",
     sellerEmail: "priya@college.edu.in",
+    courseCode: "MATH101",
+    meetupSpot: "Library",
+    negotiable: true,
     emoji: "📚",
     createdAt: Date.now() - 86400000 * 2,
   },
@@ -40,6 +61,7 @@ export const SAMPLE_LISTINGS = [
     campus: SITE.campus,
     sellerName: "Arjun M.",
     sellerEmail: "arjun@college.edu.in",
+    meetupSpot: "Library",
     emoji: "💻",
     createdAt: Date.now() - 86400000 * 1,
   },
@@ -54,6 +76,9 @@ export const SAMPLE_LISTINGS = [
     campus: SITE.campus,
     sellerName: "Karan K.",
     sellerEmail: "karan@college.edu.in",
+    meetupSpot: "Hostel reception",
+    negotiable: true,
+    saleTag: "moving-out",
     emoji: "🛋️",
     createdAt: Date.now() - 86400000 * 4,
   },
@@ -96,6 +121,8 @@ export const SAMPLE_LISTINGS = [
     campus: SITE.campus,
     sellerName: "Chris P.",
     sellerEmail: "chris@college.edu.in",
+    meetupSpot: "Hostel reception",
+    saleTag: "moving-out",
     emoji: "📦",
     createdAt: Date.now() - 86400000 * 5,
   },

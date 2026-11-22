@@ -4,13 +4,12 @@ import { PRODUCTION_API_URL } from "./config.js";
 const API_BASE = (() => {
   const { hostname, port } = window.location;
   if (port === "8787") return "";
-  if (port === "5001" || port === "5000") return "";
   if (hostname.endsWith(".github.io") || hostname.endsWith(".github.dev")) {
     return PRODUCTION_API_URL;
   }
   if (hostname !== "localhost" && hostname !== "127.0.0.1") return PRODUCTION_API_URL;
-  // Local development: connect to Cloudflare Worker (default 8787) or Flask (5001)
-  return window.__USE_FLASK ? "http://localhost:5001" : "http://localhost:8787";
+  // Local development: use a local worker on :8787 if running, otherwise demo mode.
+  return "http://localhost:8787";
 })();
 
 let backendAvailable = null;
@@ -148,6 +147,26 @@ export const api = {
       method: "POST",
       body: { body },
     }),
+
+  createListingsBulk: (payload) =>
+    request("/api/listings/bulk", { method: "POST", body: payload }),
+
+  getUnread: () => request("/api/unread"),
+
+  getSaved: () => request("/api/saved"),
+  saveListing: (id) => request(`/api/listings/${id}/save`, { method: "POST" }),
+  unsaveListing: (id) => request(`/api/listings/${id}/save`, { method: "DELETE" }),
+
+  reportListing: (id, reason, details) =>
+    request(`/api/listings/${id}/report`, { method: "POST", body: { reason, details } }),
+
+  rateSeller: (listingId, stars, comment) =>
+    request("/api/ratings", { method: "POST", body: { listingId, stars, comment } }),
+  getUserRatings: (userId) => request(`/api/users/${userId}/ratings`),
+
+  getWanted: () => request("/api/wanted"),
+  createWanted: (post) => request("/api/wanted", { method: "POST", body: post }),
+  deleteWanted: (id) => request(`/api/wanted/${id}`, { method: "DELETE" }),
 
   createPayment: (listingId) =>
     request("/api/payments", { method: "POST", body: { listingId } }),

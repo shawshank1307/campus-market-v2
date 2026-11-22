@@ -7,11 +7,22 @@ const STORE_KEY = "campus_market_db";
 function loadDb() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) return migrate(JSON.parse(raw));
   } catch {
     /* ignore */
   }
   return seedDb();
+}
+
+/** Adds v2 collections to demo databases created by older versions. */
+function migrate(db) {
+  db.saved ??= [];
+  db.reports ??= [];
+  db.ratings ??= [];
+  db.wanted ??= [];
+  db.reads ??= {};
+  db.nextWantedId ??= 1;
+  return db;
 }
 
 function saveDb(db) {
@@ -44,6 +55,10 @@ function seedDb() {
     emoji: item.emoji,
     image: item.image || null,
     status: "active",
+    courseCode: item.courseCode || null,
+    meetupSpot: item.meetupSpot || null,
+    negotiable: Boolean(item.negotiable),
+    saleTag: item.saleTag || null,
     createdAt: item.createdAt || now - i * 86400000,
     sellerName: item.sellerName,
     sellerEmail: item.sellerEmail,
@@ -58,6 +73,15 @@ function seedDb() {
     listings,
     conversations: [],
     messages: [],
+    saved: [],
+    reports: [],
+    ratings: [],
+    reads: {},
+    wanted: [
+      { id: 1, userId: 1, title: "Need a scientific calculator for exams", description: "Casio fx-991 or similar, just for this semester.", budget: 600, category: "electronics", courseCode: null, status: "open", createdAt: now - 3600000 * 5 },
+      { id: 2, userId: 1, title: "Looking for Operating Systems textbook", description: "Galvin, any recent edition.", budget: 400, category: "textbooks", courseCode: "CS301", status: "open", createdAt: now - 86400000 },
+    ],
+    nextWantedId: 3,
     nextUserId: 2,
     nextConvId: 1,
     nextMsgId: 1,
@@ -107,6 +131,10 @@ function listingPublic(row) {
     image: row.image,
     status: row.status,
     sellerId: row.sellerId,
+    courseCode: row.courseCode || null,
+    meetupSpot: row.meetupSpot || null,
+    negotiable: Boolean(row.negotiable),
+    saleTag: row.saleTag || null,
     createdAt: row.createdAt,
     sellerName: row.sellerName,
     sellerEmail: row.sellerEmail,
@@ -115,15 +143,82 @@ function listingPublic(row) {
   };
 }
 
-function enrichListing(db, listing) {
+function enrichListing(db, listing, { full = false } = {}) {
   const seller = findUser(db, listing.sellerId);
-  return listingPublic({
+  const out = listingPublic({
     ...listing,
     sellerName: seller?.name || listing.sellerName,
     sellerEmail: seller?.collegeEmail || listing.sellerEmail,
     sellerPhone: seller?.phone || listing.sellerPhone,
     sellerRollNumber: seller?.rollNumber || listing.sellerRollNumber,
   });
+  if (full) out.images = listing.images?.length ? listing.images : listing.image ? [listing.image] : [];
+  return out;
+}
+
+// ---- v2 helpers (mirror cloudflare-backend/src/index.ts) ----
+const CATEGORY_IDS = ["textbooks", "electronics", "furniture", "clothing", "services", "other"];
+const CONDITION_NAMES = ["Like New", "Good", "Fair", "Used"];
+const COURSE_CODE_RE = /^[A-Z]{2,5}[ -]?\d{2,4}[A-Z]?$/;
+const REPORT_REASONS = ["spam", "fake", "prohibited", "wrong-info", "other"];
+
+function readListingInput(json, { requireDescription = true } = {}) {
+  const title = String(json.title || "").trim();
+  const description = String(json.description || "").trim();
+  const price = Number(json.price);
+  const category = String(json.category || "other");
+  const condition = String(json.condition || "Good");
+  const courseCode = String(json.courseCode || "").trim().toUpperCase() || null;
+  const meetupSpot = String(json.meetupSpot || "").trim().slice(0, 60) || null;
+  const images = (Array.isArray(json.images) ? json.images : json.image ? [json.image] : []).filter((i) => typeof i === "string");
+  if (!title || title.length > 100) fail("Title is required (max 100 characters).");
+  if (requireDescription && !description) fail("Description is required.");
+  if (description.length > 1000) fail("Description is too long (max 1000 characters).");
+  if (!Number.isFinite(price) || price < 0 || price > 10_000_000) fail("Enter a valid price.");
+  if (!CATEGORY_IDS.includes(category)) fail("Unknown category.");
+  if (!CONDITION_NAMES.includes(condition)) fail("Unknown condition.");
+  if (courseCode && !COURSE_CODE_RE.test(courseCode)) fail("Course code should look like CS201 or MATH-101.");
+  if (images.length > 4) fail("Up to 4 photos per listing.");
+  return { title, description, price: Math.round(price), category, condition, images, courseCode, meetupSpot, negotiable: Boolean(json.negotiable) };
+}
+
+function createListing(db, user, v, saleTag) {
+  const emoji = { textbooks: "📚", electronics: "💻", furniture: "🛋️", clothing: "👕", services: "🛠️", other: "📦" };
+  const listing = {
+    id: generateId(),
+    sellerId: user.id,
+    ...v,
+    image: v.images[0] || null,
+    campus: user.campus,
+    emoji: emoji[v.category],
+    saleTag,
+    status: "active",
+    createdAt: Date.now(),
+  };
+  db.listings.unshift(listing);
+  return listing;
+}
+
+function sellerRating(db, sellerId) {
+  const mine = db.ratings.filter((r) => r.sellerId === sellerId);
+  const avg = mine.length ? mine.reduce((a, r) => a + r.stars, 0) / mine.length : null;
+  return { average: avg === null ? null : Math.round(avg * 10) / 10, count: mine.length };
+}
+
+function canRate(db, listingId, sellerId, userId) {
+  if (sellerId === userId) return false;
+  if (db.ratings.some((r) => r.listingId === listingId && r.raterId === userId)) return false;
+  return db.conversations.some((c) => c.listingId === listingId && c.buyerId === userId) ||
+    (db.purchases || []).some((p) => p.listingId === listingId && p.buyerId === userId);
+}
+
+function unreadIn(db, conv, userId) {
+  const lastRead = db.reads[`${conv.id}:${userId}`] || 0;
+  return db.messages.filter((m) => m.conversationId === conv.id && m.senderId !== userId && m.createdAt > lastRead).length;
+}
+
+function markRead(db, convId, userId) {
+  db.reads[`${convId}:${userId}`] = Date.now();
 }
 
 function validateCollegeEmail(email) {
@@ -343,31 +438,40 @@ export async function handle(path, options = {}) {
   const listingMatch = path.match(/^\/api\/listings\/([^/]+)$/);
   if (listingMatch && method === "GET") {
     const listing = db.listings.find((l) => l.id === listingMatch[1]);
-    if (!listing) fail("Listing not found.");
-    return { listing: enrichListing(db, listing) };
+    const viewer = currentUser(db);
+    if (!listing || (listing.status === "hidden" && viewer?.id !== listing.sellerId)) fail("Listing not found.");
+    const out = enrichListing(db, listing, { full: true });
+    out.sellerRating = sellerRating(db, listing.sellerId);
+    out.canRate = viewer?.emailVerified ? canRate(db, listing.id, listing.sellerId, viewer.id) : false;
+    return { listing: out };
   }
 
   if (path === "/api/listings" && method === "POST") {
     const user = requireUser(db);
-    const listingId = generateId();
-    const now = Date.now();
-    const listing = {
-      id: listingId,
-      sellerId: user.id,
-      title: (body?.title || "").trim(),
-      description: (body?.description || "").trim(),
-      price: Number(body?.price || 0),
-      category: body?.category,
-      condition: body?.condition,
-      campus: body?.campus || user.campus,
-      emoji: body?.emoji || null,
-      image: body?.image || null,
-      status: "active",
-      createdAt: now,
-    };
-    db.listings.unshift(listing);
+    const listing = createListing(db, user, readListingInput(body || {}), null);
     saveDb(db);
-    return { listing: enrichListing(db, listing) };
+    return { listing: enrichListing(db, listing, { full: true }) };
+  }
+
+  if (path === "/api/listings/bulk" && method === "POST") {
+    const user = requireUser(db);
+    const items = Array.isArray(body?.items) ? body.items : [];
+    if (!items.length) fail("Add at least one item.");
+    if (items.length > 15) fail("Up to 15 items at a time.");
+    const note = String(body?.description || "").trim().slice(0, 500);
+    const parsed = items.map((item, i) => {
+      try {
+        return readListingInput(
+          { ...item, description: item.description || note || "Moving-out sale.", meetupSpot: body.meetupSpot, negotiable: body.negotiable ?? true },
+          { requireDescription: false }
+        );
+      } catch (err) {
+        fail(`Item ${i + 1}: ${err.message}`);
+      }
+    });
+    const ids = parsed.map((v) => createListing(db, user, v, "moving-out").id);
+    saveDb(db);
+    return { created: ids.length, ids };
   }
 
   const markSoldMatch = path.match(/^\/api\/listings\/([^/]+)\/mark-sold$/);
@@ -410,6 +514,7 @@ export async function handle(path, options = {}) {
           otherName: otherName || "User",
           lastMessage: last?.body || "No messages yet",
           lastMessageAt: last?.createdAt || c.createdAt,
+          unread: unreadIn(db, c, user.id),
         };
       })
       .sort((a, b) => b.lastMessageAt - a.lastMessageAt);
@@ -448,6 +553,8 @@ export async function handle(path, options = {}) {
     if (!conv || (conv.buyerId !== user.id && conv.sellerId !== user.id)) {
       fail("Conversation not found.");
     }
+    markRead(db, conversationId, user.id);
+    saveDb(db);
     const messages = db.messages
       .filter((m) => m.conversationId === conversationId)
       .sort((a, b) => a.createdAt - b.createdAt)
@@ -483,6 +590,7 @@ export async function handle(path, options = {}) {
       createdAt: Date.now(),
     };
     db.messages.push(message);
+    markRead(db, conversationId, user.id);
     saveDb(db);
     return {
       message: {
@@ -502,6 +610,7 @@ export async function handle(path, options = {}) {
     if (!listing || listing.status !== "active") fail("Listing unavailable.");
     if (listing.sellerId === user.id) fail("You cannot buy your own listing.");
     listing.status = "sold";
+    (db.purchases ||= []).push({ listingId: listing.id, buyerId: user.id, createdAt: Date.now() });
     saveDb(db);
     return {
       transaction: {
@@ -513,6 +622,140 @@ export async function handle(path, options = {}) {
       },
       message: "Payment successful! Contact the seller to arrange pickup.",
     };
+  }
+
+  if (path === "/api/unread") {
+    const user = currentUser(db);
+    if (!user) return { count: 0 };
+    const count = db.conversations
+      .filter((c) => c.buyerId === user.id || c.sellerId === user.id)
+      .reduce((n, c) => n + unreadIn(db, c, user.id), 0);
+    return { count };
+  }
+
+  if (path === "/api/saved" && method === "GET") {
+    const user = requireUser(db);
+    const listings = db.saved
+      .filter((s) => s.userId === user.id)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((s) => db.listings.find((l) => l.id === s.listingId))
+      .filter((l) => l && l.status !== "hidden")
+      .map((l) => enrichListing(db, l));
+    return { listings };
+  }
+
+  const saveMatch = path.match(/^\/api\/listings\/([^/]+)\/save$/);
+  if (saveMatch) {
+    const user = requireUser(db);
+    const id = saveMatch[1];
+    if (method === "POST") {
+      if (!db.listings.some((l) => l.id === id)) fail("Listing not found.");
+      if (!db.saved.some((s) => s.userId === user.id && s.listingId === id)) {
+        db.saved.push({ userId: user.id, listingId: id, createdAt: Date.now() });
+      }
+      saveDb(db);
+      return { saved: true };
+    }
+    if (method === "DELETE") {
+      db.saved = db.saved.filter((s) => !(s.userId === user.id && s.listingId === id));
+      saveDb(db);
+      return { saved: false };
+    }
+  }
+
+  const reportMatch = path.match(/^\/api\/listings\/([^/]+)\/report$/);
+  if (reportMatch && method === "POST") {
+    const user = requireUser(db);
+    const listing = db.listings.find((l) => l.id === reportMatch[1]);
+    if (!REPORT_REASONS.includes(body?.reason)) fail("Choose a reason.");
+    if (!listing) fail("Listing not found.");
+    if (listing.sellerId === user.id) fail("You can't report your own listing.");
+    if (db.reports.some((r) => r.listingId === listing.id && r.reporterId === user.id)) {
+      return { message: "You already reported this listing." };
+    }
+    db.reports.push({ listingId: listing.id, reporterId: user.id, reason: body.reason, details: String(body.details || "").slice(0, 300), createdAt: Date.now() });
+    if (db.reports.filter((r) => r.listingId === listing.id).length >= 3 && listing.status === "active") {
+      listing.status = "hidden";
+    }
+    saveDb(db);
+    return { message: "Thanks — our team will take a look." };
+  }
+
+  if (path === "/api/ratings" && method === "POST") {
+    const user = requireUser(db);
+    const stars = Number(body?.stars);
+    if (!Number.isInteger(stars) || stars < 1 || stars > 5) fail("Pick 1 to 5 stars.");
+    const listing = db.listings.find((l) => l.id === body?.listingId);
+    if (!listing) fail("Listing not found.");
+    if (!canRate(db, listing.id, listing.sellerId, user.id)) {
+      fail("You can rate a seller once, after chatting with or buying from them.");
+    }
+    db.ratings.push({ listingId: listing.id, sellerId: listing.sellerId, raterId: user.id, stars, comment: String(body.comment || "").trim().slice(0, 300), createdAt: Date.now() });
+    saveDb(db);
+    return { message: "Thanks for rating!", sellerRating: sellerRating(db, listing.sellerId) };
+  }
+
+  const ratingsMatch = path.match(/^\/api\/users\/(\d+)\/ratings$/);
+  if (ratingsMatch) {
+    const sellerId = Number(ratingsMatch[1]);
+    const ratings = db.ratings
+      .filter((r) => r.sellerId === sellerId)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 20)
+      .map((r) => ({ stars: r.stars, comment: r.comment, raterName: findUser(db, r.raterId)?.name || "Student", createdAt: r.createdAt }));
+    return { summary: sellerRating(db, sellerId), ratings };
+  }
+
+  if (path === "/api/wanted" && method === "GET") {
+    const viewer = currentUser(db);
+    const posts = db.wanted
+      .filter((w) => w.status === "open")
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((w) => {
+        const poster = findUser(db, w.userId);
+        return {
+          id: w.id,
+          userId: w.userId,
+          title: w.title,
+          description: w.description,
+          budget: w.budget,
+          category: w.category,
+          courseCode: w.courseCode,
+          userName: poster?.name || "Student",
+          contact: viewer?.emailVerified ? { email: poster?.collegeEmail, phone: poster?.phone } : null,
+          createdAt: w.createdAt,
+        };
+      });
+    return { posts };
+  }
+
+  if (path === "/api/wanted" && method === "POST") {
+    const user = requireUser(db);
+    const title = String(body?.title || "").trim();
+    const budget = body?.budget === "" || body?.budget == null ? null : Number(body.budget);
+    const category = String(body?.category || "other");
+    const courseCode = String(body?.courseCode || "").trim().toUpperCase() || null;
+    if (!title || title.length > 100) fail("Say what you are looking for (max 100 characters).");
+    if (budget !== null && (!Number.isFinite(budget) || budget < 0)) fail("Enter a valid budget.");
+    if (!CATEGORY_IDS.includes(category)) fail("Unknown category.");
+    if (courseCode && !COURSE_CODE_RE.test(courseCode)) fail("Course code should look like CS201 or MATH-101.");
+    if (db.wanted.filter((w) => w.userId === user.id && w.status === "open").length >= 10) {
+      fail("You can have up to 10 open requests.");
+    }
+    const id = db.nextWantedId++;
+    db.wanted.push({ id, userId: user.id, title, description: String(body?.description || "").trim().slice(0, 500), budget: budget === null ? null : Math.round(budget), category, courseCode, status: "open", createdAt: Date.now() });
+    saveDb(db);
+    return { id };
+  }
+
+  const wantedMatch = path.match(/^\/api\/wanted\/(\d+)$/);
+  if (wantedMatch && method === "DELETE") {
+    const user = requireUser(db);
+    const idx = db.wanted.findIndex((w) => w.id === Number(wantedMatch[1]) && w.userId === user.id);
+    if (idx === -1) fail("Request not found.");
+    db.wanted.splice(idx, 1);
+    saveDb(db);
+    return { message: "Request removed." };
   }
 
   fail("Unknown API route.");

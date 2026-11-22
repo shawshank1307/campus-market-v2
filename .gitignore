@@ -27,3 +27,9 @@ venv/
 *.db
 .DS_Store
 __pycache__/
+
+# Cloudflare local secrets
+.dev.vars
+
+# Test output
+tests/output/
