@@ -2,7 +2,7 @@
 export const SITE = {
   name: "Campus Market",
   campus: "Main Campus",
-  tagline: "The student marketplace for your campus",
+  tagline: "Buy and sell with students on your campus",
   emailPlaceholder: "you@college.edu.in",
 };
 
@@ -10,6 +10,7 @@ export const CAMPUSES = [SITE.campus];
 
 export const LOGO = {
   large: "assets/jklu/logo-large.png",
+  emblem: "assets/jklu/emblem.png",
 };
 
 /** Campus photos used in the home hero and sign-in screens. */

@@ -3,28 +3,84 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ea580c" />
   <title>Campus Market — Buy &amp; sell on campus</title>
-  <meta name="description" content="A verified student marketplace — buy and sell textbooks, electronics, furniture and more with people on your campus." />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M9 12h14l-1.5 11h-11z' fill='none' stroke='white' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M12.5 12a3.5 3.5 0 0 1 7 0' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E" />
+  <meta name="description" content="Campus Market — buy and sell textbooks, electronics, furniture and more with verified students on your campus." />
+  <link rel="icon" type="image/png" href="assets/jklu/emblem.png" />
+  <link rel="apple-touch-icon" href="assets/jklu/logo-large.png" />
+  <link rel="preload" as="image" href="assets/jklu/emblem.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
+  <script>
+    // Apply the saved (or system) colour theme before first paint.
+    try {
+      var saved = localStorage.getItem("cm_theme");
+      var dark = saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
+    } catch (e) {}
+    // Play the opening bloom once per browser session (and never with "reduce motion").
+    try {
+      if (sessionStorage.getItem("cm_splash_seen") || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        document.documentElement.classList.add("no-splash");
+      } else {
+        sessionStorage.setItem("cm_splash_seen", "1");
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body>
+  <div class="splash" id="splash" aria-hidden="true">
+    <div class="splash-stage">
+      <svg class="bloom" viewBox="-150 -150 300 300">
+        <defs>
+          <linearGradient id="petal-orange" x1="0" y1="0" x2="0" y2="-1" gradientUnits="objectBoundingBox">
+            <stop offset="0%" stop-color="#fdba74" />
+            <stop offset="100%" stop-color="#ea580c" />
+          </linearGradient>
+          <linearGradient id="petal-blue" x1="0" y1="0" x2="0" y2="-1" gradientUnits="objectBoundingBox">
+            <stop offset="0%" stop-color="#bae6fd" />
+            <stop offset="100%" stop-color="#0284c7" />
+          </linearGradient>
+        </defs>
+        <g class="petals petals-outer">
+          <g transform="rotate(0)"><path class="petal" style="--d:0ms" d="M0 -8 C 26 -40, 22 -96, 0 -128 C -22 -96, -26 -40, 0 -8Z" /></g>
+          <g transform="rotate(45)"><path class="petal" style="--d:60ms" d="M0 -8 C 26 -40, 22 -96, 0 -128 C -22 -96, -26 -40, 0 -8Z" /></g>
+          <g transform="rotate(90)"><path class="petal" style="--d:120ms" d="M0 -8 C 26 -40, 22 -96, 0 -128 C -22 -96, -26 -40, 0 -8Z" /></g>
+          <g transform="rotate(135)"><path class="petal" style="--d:180ms" d="M0 -8 C 26 -40, 22 -96, 0 -128 C -22 -96, -26 -40, 0 -8Z" /></g>
+          <g transform="rotate(180)"><path class="petal" style="--d:240ms" d="M0 -8 C 26 -40, 22 -96, 0 -128 C -22 -96, -26 -40, 0 -8Z" /></g>
+          <g transform="rotate(225)"><path class="petal" style="--d:300ms" d="M0 -8 C 26 -40, 22 -96, 0 -128 C -22 -96, -26 -40, 0 -8Z" /></g>
+          <g transform="rotate(270)"><path class="petal" style="--d:360ms" d="M0 -8 C 26 -40, 22 -96, 0 -128 C -22 -96, -26 -40, 0 -8Z" /></g>
+          <g transform="rotate(315)"><path class="petal" style="--d:420ms" d="M0 -8 C 26 -40, 22 -96, 0 -128 C -22 -96, -26 -40, 0 -8Z" /></g>
+        </g>
+        <g class="petals petals-inner">
+          <g transform="rotate(22.5)"><path class="petal" style="--d:300ms" d="M0 -6 C 18 -30, 16 -66, 0 -90 C -16 -66, -18 -30, 0 -6Z" /></g>
+          <g transform="rotate(67.5)"><path class="petal" style="--d:350ms" d="M0 -6 C 18 -30, 16 -66, 0 -90 C -16 -66, -18 -30, 0 -6Z" /></g>
+          <g transform="rotate(112.5)"><path class="petal" style="--d:400ms" d="M0 -6 C 18 -30, 16 -66, 0 -90 C -16 -66, -18 -30, 0 -6Z" /></g>
+          <g transform="rotate(157.5)"><path class="petal" style="--d:450ms" d="M0 -6 C 18 -30, 16 -66, 0 -90 C -16 -66, -18 -30, 0 -6Z" /></g>
+          <g transform="rotate(202.5)"><path class="petal" style="--d:500ms" d="M0 -6 C 18 -30, 16 -66, 0 -90 C -16 -66, -18 -30, 0 -6Z" /></g>
+          <g transform="rotate(247.5)"><path class="petal" style="--d:550ms" d="M0 -6 C 18 -30, 16 -66, 0 -90 C -16 -66, -18 -30, 0 -6Z" /></g>
+          <g transform="rotate(292.5)"><path class="petal" style="--d:600ms" d="M0 -6 C 18 -30, 16 -66, 0 -90 C -16 -66, -18 -30, 0 -6Z" /></g>
+          <g transform="rotate(337.5)"><path class="petal" style="--d:650ms" d="M0 -6 C 18 -30, 16 -66, 0 -90 C -16 -66, -18 -30, 0 -6Z" /></g>
+        </g>
+        <circle class="bloom-core" r="64" />
+      </svg>
+      <img class="splash-emblem" src="assets/jklu/emblem.png" alt="" />
+    </div>
+    <div class="splash-title">
+      <span>Campus</span>
+      <span>Market</span>
+    </div>
+  </div>
+
   <header class="header">
     <div class="container header-inner">
       <a href="#/" class="brand" aria-label="Campus Market home">
-        <span class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 8h14l-1.4 12H6.4z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>
-        </span>
+        <img class="brand-emblem" src="assets/jklu/emblem.png" alt="JKLU emblem" width="40" height="33" />
         <span class="brand-name">Campus Market</span>
       </a>
-      <nav class="nav" id="main-nav" aria-label="Main">
-        <a href="#/" class="nav-link" data-route="/">Browse</a>
-        <a href="#/sell" class="nav-link" data-route="/sell">Sell</a>
-        <a href="#/messages" class="nav-link" data-route="/messages">Messages</a>
-      </nav>
+      <nav class="nav" id="main-nav" aria-label="Main"></nav>
       <div class="header-actions" id="header-actions"></div>
       <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -37,7 +93,10 @@
   <footer class="footer">
     <div class="container footer-inner">
       <div class="footer-brand">
-        <span class="brand-name">Campus Market</span>
+        <div class="brand">
+          <img class="brand-emblem" src="assets/jklu/emblem.png" alt="" width="40" height="33" />
+          <span class="brand-name">Campus Market</span>
+        </div>
         <p>Buy and sell with verified students on your campus.</p>
       </div>
       <nav class="footer-links" aria-label="Footer">

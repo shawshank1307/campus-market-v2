@@ -1,6 +1,6 @@
 # Campus Market
 
-A verified student marketplace: buy and sell textbooks, electronics, furniture and more with people on your campus.
+Campus Market lets verified students buy and sell textbooks, electronics, furniture and more with people on your campus.
 
 ## Features
 
@@ -9,7 +9,11 @@ A verified student marketplace: buy and sell textbooks, electronics, furniture a
 - **Listings:** browse, search, filter by category, sort by price or date
 - **In-app messaging** between buyers and sellers
 - **Demo checkout**
-- Glass UI, campus photo hero, smooth page and scroll transitions (respects "reduce motion")
+- JKLU orange theme, glass UI, campus photo hero, smooth page and scroll transitions
+- **Opening animation:** the JKLU emblem blooms open like a flower (once per session)
+- **Dark mode** with an ink-bleed transition that spreads from where you click
+- **A friendly stickman** who walks along the bottom of the screen (hover = wave, click = jump + tip, double-click = hide)
+- All motion respects the system "reduce motion" setting
 
 ## Run locally
 
@@ -42,6 +46,10 @@ npx wrangler d1 execute campus-market-db --remote --file=migrations/0001_add_pas
 
 Accounts created before passwords existed can set one using **Forgot password**.
 
+## Credits
+
+The dark-mode ink transition is inspired by [Ink Bleed](https://github.com/codemure-official/ink-bleed-theme-changer) by Codemure (MIT License). This version is a lightweight re-implementation using the browser's View Transitions API instead of WebGL snapshots.
+
 ## Project layout
 
 ```
@@ -51,6 +59,8 @@ js/app.js           Views and router
 js/api.js           API client (falls back to demo mode)
 js/local-api.js     In-browser demo backend
 js/password.js      Password hashing and validation
+js/theme.js         Light/dark theme + ink-bleed transition
+js/stickman.js      The walking stickman
 js/config.js        Site name, photos, API URL
 cloudflare-backend/ Production API (Hono on Workers + D1)
 backend/            Legacy Flask API

@@ -8,6 +8,8 @@ import {
 import { SITE, CAMPUS_PHOTOS, LOGO, photoUrl } from "./config.js";
 import { processListingImage } from "./image-utils.js";
 import { passwordProblem, passwordStrength } from "./password.js";
+import { toggleTheme, currentTheme } from "./theme.js";
+import { initStickman } from "./stickman.js";
 import { api } from "./api.js";
 import {
   getUser,
@@ -65,6 +67,8 @@ const ICONS = {
   share: svg('<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>'),
   eye: svg('<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
   eyeOff: svg('<path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6A17.4 17.4 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
+  sun: svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+  moon: svg('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'),
   lock: svg('<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
 };
 
@@ -267,8 +271,14 @@ function updateHeader() {
        <a href="#/profile" class="nav-link" data-route="/profile">My listings</a>`
     : `<a href="#/" class="nav-link" data-route="/">Browse</a>`;
 
+  const themeBtn = `
+    <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-pressed="${currentTheme() === "dark"}" aria-label="${currentTheme() === "dark" ? "Switch to light mode" : "Switch to dark mode"}">
+      <span class="ti ti-sun">${ICONS.sun}</span><span class="ti ti-moon">${ICONS.moon}</span>
+    </button>`;
+
   if (user) {
     headerActions.innerHTML = `
+      ${themeBtn}
       <a href="#/sell" class="btn btn-primary btn-sm">${ICONS.plus}<span>Sell an item</span></a>
       <div class="account">
         <button class="account-btn" id="account-btn" aria-haspopup="true" aria-expanded="false">
@@ -304,11 +314,47 @@ function updateHeader() {
     });
   } else {
     headerActions.innerHTML = `
+      ${themeBtn}
       <a href="#/login" class="btn btn-ghost btn-sm">Log in</a>
       <a href="#/signup" class="btn btn-primary btn-sm">Sign up</a>`;
   }
 
+  headerActions.querySelector("[data-theme-toggle]").addEventListener("click", (e) => {
+    const point = e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : null;
+    toggleTheme(point || centerOf(e.currentTarget));
+  });
+
   setActiveNav(parseRoute().path);
+}
+
+function centerOf(el) {
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+/* ---------- Opening splash ---------- */
+
+function initSplash() {
+  const splash = document.getElementById("splash");
+  if (!splash) return Promise.resolve();
+  if (document.documentElement.classList.contains("no-splash")) {
+    splash.remove();
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const done = () => {
+      if (!splash.isConnected) return;
+      splash.remove();
+      resolve();
+    };
+    // CSS plays the bloom and fades the splash out; remove it once that finishes.
+    splash.addEventListener("animationend", (e) => e.target === splash && done());
+    splash.addEventListener("click", () => {
+      splash.classList.add("skip");
+      setTimeout(done, 400);
+    });
+    setTimeout(done, 4000); // safety net
+  });
 }
 
 document.addEventListener("click", () => {
@@ -436,7 +482,7 @@ function renderHome() {
         <div class="glass hero-card">
           <div class="hero-brand">
             <span class="logo-tile"><img src="${LOGO.large}" alt="JK Lakshmipat University logo" /></span>
-            <span class="eyebrow">Student marketplace</span>
+            <span class="eyebrow">Campus Market</span>
           </div>
           ${heroCopy}
         </div>
@@ -1387,9 +1433,11 @@ nav?.addEventListener("click", () => nav.classList.remove("open"));
 window.addEventListener("hashchange", render);
 
 async function init() {
+  const splashDone = initSplash();
   await loadSession();
   updateHeader();
   render();
+  splashDone.then(initStickman);
 }
 
 init();
