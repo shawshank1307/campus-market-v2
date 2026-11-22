@@ -8,7 +8,7 @@
 
 No build step · Vanilla JS frontend · Cloudflare Workers + D1 API · Works offline in demo mode
 
-[Features](#-features) · [Quick start](#-quick-start) · [Feature tour](docs/FEATURES.md) · [API](docs/API.md) · [Deploy](docs/DEPLOYMENT.md) · [Architecture](docs/ARCHITECTURE.md)
+[**Case study**](docs/CASE_STUDY.md) · [Features](#-features) · [Quick start](#-quick-start) · [Feature tour](docs/FEATURES.md) · [API](docs/API.md) · [Deploy](docs/DEPLOYMENT.md) · [Architecture](docs/ARCHITECTURE.md)
 
 <br />
 
@@ -103,6 +103,7 @@ The browser test needs Chrome (or set `BROWSER=` to any Chromium browser) and th
 
 ## 📚 Documentation
 
+- **[Case study](docs/CASE_STUDY.md)** — from JKLU Swap to Campus Market: the problems, decisions, security fixes and results
 - **[Feature tour](docs/FEATURES.md)** — a walkthrough of every screen
 - **[API reference](docs/API.md)** — every endpoint, request and response
 - **[Deployment guide](docs/DEPLOYMENT.md)** — Cloudflare, Resend email, GitHub Pages
