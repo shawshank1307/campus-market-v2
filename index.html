@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus Market — Buy &amp; sell on campus</title>
+  <meta name="description" content="A verified student marketplace — buy and sell textbooks, electronics, furniture and more with people on your campus." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M9 12h14l-1.5 11h-11z' fill='none' stroke='white' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M12.5 12a3.5 3.5 0 0 1 7 0' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <a href="#/" class="brand" aria-label="Campus Market home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 8h14l-1.4 12H6.4z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>
+        </span>
+        <span class="brand-name">Campus Market</span>
+      </a>
+      <nav class="nav" id="main-nav" aria-label="Main">
+        <a href="#/" class="nav-link" data-route="/">Browse</a>
+        <a href="#/sell" class="nav-link" data-route="/sell">Sell</a>
+        <a href="#/messages" class="nav-link" data-route="/messages">Messages</a>
+      </nav>
+      <div class="header-actions" id="header-actions"></div>
+      <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main id="app"></main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="brand-name">Campus Market</span>
+        <p>Buy and sell with verified students on your campus.</p>
+      </div>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="#/">Browse</a>
+        <a href="#/sell">Sell an item</a>
+        <a href="#/messages">Messages</a>
+      </nav>
+    </div>
+    <div class="container footer-bottom">
+      <p>&copy; 2026 Campus Market</p>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

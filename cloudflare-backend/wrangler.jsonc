@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "campus-market-backend",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-07-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "campus-market-db",
+      "database_id": "f2cf9362-f1ae-4422-b6b3-9fb511250d96"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
