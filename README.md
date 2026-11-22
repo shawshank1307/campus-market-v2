@@ -9,10 +9,9 @@ Campus Market lets verified students buy and sell textbooks, electronics, furnit
 - **Listings:** browse, search, filter by category, sort by price or date
 - **In-app messaging** between buyers and sellers
 - **Demo checkout**
-- JKLU orange theme, glass UI, campus photo hero, smooth page and scroll transitions
+- JKLU orange theme on warm off-white paper texture, glass UI, campus photo hero, smooth page and scroll transitions
 - **Opening animation:** the JKLU emblem blooms open like a flower (once per session)
 - **Dark mode** with an ink-bleed transition that spreads from where you click
-- **A friendly stickman** who walks along the bottom of the screen (hover = wave, click = jump + tip, double-click = hide)
 - All motion respects the system "reduce motion" setting
 
 ## Run locally
@@ -60,7 +59,6 @@ js/api.js           API client (falls back to demo mode)
 js/local-api.js     In-browser demo backend
 js/password.js      Password hashing and validation
 js/theme.js         Light/dark theme + ink-bleed transition
-js/stickman.js      The walking stickman
 js/config.js        Site name, photos, API URL
 cloudflare-backend/ Production API (Hono on Workers + D1)
 backend/            Legacy Flask API

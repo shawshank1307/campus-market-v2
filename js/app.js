@@ -9,7 +9,6 @@ import { SITE, CAMPUS_PHOTOS, LOGO, photoUrl } from "./config.js";
 import { processListingImage } from "./image-utils.js";
 import { passwordProblem, passwordStrength } from "./password.js";
 import { toggleTheme, currentTheme } from "./theme.js";
-import { initStickman } from "./stickman.js";
 import { api } from "./api.js";
 import {
   getUser,
@@ -1433,11 +1432,10 @@ nav?.addEventListener("click", () => nav.classList.remove("open"));
 window.addEventListener("hashchange", render);
 
 async function init() {
-  const splashDone = initSplash();
+  initSplash();
   await loadSession();
   updateHeader();
   render();
-  splashDone.then(initStickman);
 }
 
 init();
