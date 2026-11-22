@@ -9,7 +9,7 @@ Campus Market lets verified students buy and sell textbooks, electronics, furnit
 - **Listings:** browse, search, filter by category, sort by price or date
 - **In-app messaging** between buyers and sellers
 - **Demo checkout**
-- JKLU orange theme on warm off-white paper texture, glass UI, campus photo hero, smooth page and scroll transitions
+- JKLU orange theme, glass UI, campus photo hero, smooth page and scroll transitions
 - **Opening animation:** the JKLU emblem blooms open like a flower (once per session)
 - **Dark mode** with an ink-bleed transition that spreads from where you click
 - All motion respects the system "reduce motion" setting
