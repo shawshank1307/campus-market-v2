@@ -221,10 +221,8 @@ function markRead(db, convId, userId) {
   db.reads[`${convId}:${userId}`] = Date.now();
 }
 
-function validateCollegeEmail(email) {
-  return /^[a-zA-Z0-9._%+-]+@(?!gmail\.com|yahoo\.com|hotmail\.com|outlook\.com)[a-zA-Z0-9.-]+\.(edu|ac\.in|edu\.in)$/i.test(
-    email || ""
-  );
+function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || "").trim());
 }
 
 function generateOtp() {
@@ -247,7 +245,7 @@ function fail(message) {
 function requireUser(db) {
   const user = currentUser(db);
   if (!user) fail("Please log in to continue.");
-  if (!user.emailVerified) fail("Please verify your college email first.");
+  if (!user.emailVerified) fail("Please verify your email first.");
   return user;
 }
 
@@ -284,8 +282,8 @@ export async function handle(path, options = {}) {
     if (!name || !rollNumber || !phone || !collegeEmail || !campus) {
       fail("All fields are required.");
     }
-    if (!validateCollegeEmail(collegeEmail)) {
-      fail("Use a valid college email (.edu or .ac.in).");
+    if (!validateEmail(collegeEmail)) {
+      fail("Please enter a valid email address.");
     }
     if (!/^\d{10}$/.test(phone)) {
       fail("Phone number must be 10 digits.");
@@ -331,21 +329,21 @@ export async function handle(path, options = {}) {
     return {
       token: sessionToken,
       user: userPublic(user),
-      message: "Account created. Verify your college email with the OTP sent.",
+      message: "Account created. Verify your email with the OTP sent.",
       demoOtp: otp,
     };
   }
 
   if (path === "/api/auth/send-otp" && method === "POST") {
     const collegeEmail = (body?.collegeEmail || "").trim().toLowerCase();
-    if (!validateCollegeEmail(collegeEmail)) fail("Invalid college email.");
+    if (!validateEmail(collegeEmail)) fail("Invalid email address.");
     if (!db.users.some((u) => u.collegeEmail === collegeEmail)) {
       fail("No account found for this email.");
     }
     const otp = generateOtp();
     db.otps[collegeEmail] = { code: otp, expiresAt: Date.now() + 600000 };
     saveDb(db);
-    return { message: "Verification code sent to your college email.", demoOtp: otp };
+    return { message: "Verification code sent to your email.", demoOtp: otp };
   }
 
   if (path === "/api/auth/verify-email" && method === "POST") {

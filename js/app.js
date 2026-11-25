@@ -608,7 +608,7 @@ function renderHome() {
          <a href="#listings" class="btn btn-glass btn-lg" id="browse-btn">Browse listings</a>
        </div>`
     : `<h1>Buy and sell with students on your campus</h1>
-       <p class="lead">Textbooks, electronics, hostel essentials and more — from people you can meet in person. Every account is verified with a college email and student ID.</p>
+       <p class="lead">Textbooks, electronics, hostel essentials and more — from people you can meet in person. Every account is verified with email OTP and student ID.</p>
        <div class="hero-actions">
          <a href="#/signup" class="btn btn-primary btn-lg">Create free account</a>
          <a href="#listings" class="btn btn-glass btn-lg" id="browse-btn">Browse listings</a>
@@ -628,7 +628,7 @@ function renderHome() {
         </div>
         ${user ? "" : `
         <ul class="glass trust-list">
-          <li>${ICONS.shield}<div><strong>Verified students</strong><span>College email and ID checked at sign-up.</span></div></li>
+          <li>${ICONS.shield}<div><strong>Verified students</strong><span>Email OTP and student ID checked at sign-up.</span></div></li>
           <li>${ICONS.pin}<div><strong>Meet on campus</strong><span>No shipping — hand over items in person.</span></div></li>
           <li>${ICONS.chat}<div><strong>Chat in-app</strong><span>Agree on price and pickup before you meet.</span></div></li>
         </ul>`}
@@ -783,14 +783,14 @@ function renderSignup(step = 1) {
     content = `
       ${stepIndicator(1, SIGNUP_STEPS)}
       <h1>Create your account</h1>
-      <p class="muted">Use the details on your college records.</p>
+      <p class="muted">Use your details and a valid email for OTP verification.</p>
       <form id="signup-step1" class="form">
         <div class="field"><label for="name">Full name</label><input class="input" id="name" required autocomplete="name" placeholder="Rahul Sharma" value="${escapeHtml(signupDraft.name || "")}" /></div>
         <div class="field-row">
           <div class="field"><label for="rollNumber">Roll number</label><input class="input" id="rollNumber" required placeholder="22BCS1042" value="${escapeHtml(signupDraft.rollNumber || "")}" /></div>
           <div class="field"><label for="phone">Phone</label><input class="input" id="phone" type="tel" required pattern="[0-9]{10}" autocomplete="tel" placeholder="10-digit mobile" value="${escapeHtml(signupDraft.phone || "")}" /></div>
         </div>
-        <div class="field"><label for="collegeEmail">College email</label><input class="input" id="collegeEmail" type="email" required autocomplete="email" placeholder="${SITE.emailPlaceholder}" value="${escapeHtml(signupDraft.collegeEmail || "")}" /><p class="hint">We'll send a verification code to this address.</p></div>
+        <div class="field"><label for="collegeEmail">Email</label><input class="input" id="collegeEmail" type="email" required autocomplete="email" placeholder="${SITE.emailPlaceholder}" value="${escapeHtml(signupDraft.collegeEmail || "")}" /><p class="hint">We'll send a verification code to this address.</p></div>
         ${passwordField("password", "Password", { autocomplete: "new-password", meter: true })}
         ${passwordField("password-confirm", "Confirm password", { autocomplete: "new-password" })}
         <button type="submit" class="btn btn-primary btn-block">Continue</button>
@@ -968,9 +968,9 @@ function bindOtpForm(formId, email, successMessage) {
 function renderLogin() {
   app.innerHTML = renderAuthShell(`
     <h1>Log in</h1>
-    <p class="muted">Welcome back. Use your college email and password.</p>
+    <p class="muted">Welcome back. Use your email and password.</p>
     <form id="login-form" class="form">
-      <div class="field"><label for="login-email">College email</label><input class="input" id="login-email" type="email" required autocomplete="email" placeholder="${SITE.emailPlaceholder}" /></div>
+      <div class="field"><label for="login-email">Email</label><input class="input" id="login-email" type="email" required autocomplete="email" placeholder="${SITE.emailPlaceholder}" /></div>
       ${passwordField("login-password", "Password")}
       <a href="#/reset" class="forgot-link">Forgot password?</a>
       <button type="submit" class="btn btn-primary btn-block">Log in</button>
@@ -1010,9 +1010,9 @@ function renderReset() {
     app.innerHTML = renderAuthShell(`
       <a href="#/login" class="back-link">${ICONS.back}Back to log in</a>
       <h1>Reset your password</h1>
-      <p class="muted">Enter your college email and we'll send you a 6-digit code.</p>
+      <p class="muted">Enter your email and we'll send you a 6-digit code.</p>
       <form id="reset-request" class="form">
-        <div class="field"><label for="reset-email">College email</label><input class="input" id="reset-email" type="email" required autocomplete="email" placeholder="${SITE.emailPlaceholder}" value="${escapeHtml(resetDraft.email || "")}" /></div>
+        <div class="field"><label for="reset-email">Email</label><input class="input" id="reset-email" type="email" required autocomplete="email" placeholder="${SITE.emailPlaceholder}" value="${escapeHtml(resetDraft.email || "")}" /></div>
         <button type="submit" class="btn btn-primary btn-block">Send code</button>
       </form>`, 2);
 

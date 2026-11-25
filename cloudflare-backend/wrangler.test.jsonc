@@ -1,6 +1,6 @@
 // Test deployment — separate worker and database from production.
 //   npx wrangler deploy -c wrangler.test.jsonc
-// Secrets (set once):  RESEND_API_KEY, ALLOWED_TEST_EMAILS
+// Secrets (set once):  EMAIL_WEBHOOK_URL, EMAIL_WEBHOOK_SECRET (or RESEND_API_KEY)
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "campus-market-v2-test",

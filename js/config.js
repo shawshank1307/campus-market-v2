@@ -3,7 +3,7 @@ export const SITE = {
   name: "Campus Market",
   campus: "Main Campus",
   tagline: "Buy and sell with students on your campus",
-  emailPlaceholder: "you@college.edu.in",
+  emailPlaceholder: "you@gmail.com",
 };
 
 export const CAMPUSES = [SITE.campus];

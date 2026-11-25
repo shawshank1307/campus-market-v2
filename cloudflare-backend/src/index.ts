@@ -3,13 +3,17 @@ import { cors } from 'hono/cors';
 
 type Bindings = {
   DB: D1Database;
-  /** Resend API key (secret). When set, verification codes are emailed. */
+  /** Google Apps Script Web App URL (secret) for sending OTP emails via Gmail. */
+  EMAIL_WEBHOOK_URL?: string;
+  /** Shared secret (secret) sent to EMAIL_WEBHOOK_URL to authorize requests. */
+  EMAIL_WEBHOOK_SECRET?: string;
+  /** Resend API key (secret). Fallback when EMAIL_WEBHOOK_URL is not set. */
   RESEND_API_KEY?: string;
   /** Sender, e.g. "Campus Market <noreply@yourdomain.com>" */
   EMAIL_FROM?: string;
   /** "1" = also return codes in API responses. Local development only — never in production. */
   DEMO_OTP?: string;
-  /** Comma-separated non-college emails allowed to sign up (test deployments only). */
+  /** Comma-separated extra emails (kept for backward compatibility). */
   ALLOWED_TEST_EMAILS?: string;
 };
 
@@ -34,15 +38,15 @@ interface UserRow {
 
 type AppContext = Context<{ Bindings: Bindings; Variables: Variables }>;
 
-const COLLEGE_EMAIL_RE = /^[a-zA-Z0-9._%+-]+@(?!gmail\.com|yahoo\.com|hotmail\.com|outlook\.com)[a-zA-Z0-9.-]+\.(edu|ac\.in|edu\.in)$/i;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function validateCollegeEmail(email: string): boolean {
-  return COLLEGE_EMAIL_RE.test(email || '');
+function validateEmail(email: string): boolean {
+  return EMAIL_RE.test((email || '').trim());
 }
 
-/** College emails, plus any explicitly allow-listed test addresses. */
+/** Accept any valid email address (plus any explicitly allow-listed addresses). */
 function isAllowedEmail(env: Bindings, email: string): boolean {
-  if (validateCollegeEmail(email)) return true;
+  if (validateEmail(email)) return true;
   const allowed = (env.ALLOWED_TEST_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
   return allowed.includes((email || '').toLowerCase());
 }
@@ -90,26 +94,46 @@ const OTP_RESEND_WAIT_S = 60;
 const OTP_MAX_ATTEMPTS = 5;
 
 function emailConfigured(env: Bindings): boolean {
-  return Boolean(env.RESEND_API_KEY) || env.DEMO_OTP === '1';
+  return Boolean(env.EMAIL_WEBHOOK_URL || env.RESEND_API_KEY) || env.DEMO_OTP === '1';
 }
 
-/** Emails the code (if Resend is configured). Returns demoOtp only in DEMO_OTP mode. */
+/** Emails the code via Google Apps Script webhook or Resend. Returns demoOtp only in DEMO_OTP mode. */
 async function deliverOtp(env: Bindings, to: string, code: string): Promise<{ demoOtp?: string }> {
-  if (env.RESEND_API_KEY) {
+  const subject = `${code} is your Campus Market code`;
+  const text = `Your Campus Market verification code is ${code}. It expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`;
+  const html = `<div style="font-family:Inter,Arial,sans-serif;max-width:420px;margin:auto;padding:24px">
+          <h2 style="margin:0 0 8px;color:#1f1a14">Campus Market</h2>
+          <p style="color:#475569">Your verification code is</p>
+          <p style="font-size:32px;font-weight:700;letter-spacing:8px;color:#ea580c;margin:12px 0">${code}</p>
+          <p style="color:#64748b;font-size:13px">It expires in 10 minutes. If you didn't request this, you can ignore this email.</p>
+        </div>`;
+
+  if (env.EMAIL_WEBHOOK_URL) {
+    const res = await fetch(env.EMAIL_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        secret: env.EMAIL_WEBHOOK_SECRET || '',
+        to,
+        subject,
+        text,
+        html,
+      }),
+    });
+    const data = await res.json().catch(() => null) as { ok?: boolean; error?: string } | null;
+    if (!res.ok || data?.ok === false) {
+      throw new Error(data?.error || `Email webhook error (${res.status})`);
+    }
+  } else if (env.RESEND_API_KEY) {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from: env.EMAIL_FROM || 'Campus Market <onboarding@resend.dev>',
         to: [to],
-        subject: `${code} is your Campus Market code`,
-        text: `Your Campus Market verification code is ${code}. It expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`,
-        html: `<div style="font-family:Inter,Arial,sans-serif;max-width:420px;margin:auto;padding:24px">
-          <h2 style="margin:0 0 8px;color:#1f1a14">Campus Market</h2>
-          <p style="color:#475569">Your verification code is</p>
-          <p style="font-size:32px;font-weight:700;letter-spacing:8px;color:#ea580c;margin:12px 0">${code}</p>
-          <p style="color:#64748b;font-size:13px">It expires in 10 minutes. If you didn't request this, you can ignore this email.</p>
-        </div>`,
+        subject,
+        text,
+        html,
       }),
     });
     if (!res.ok) throw new Error(`Email provider error (${res.status})`);
@@ -223,7 +247,7 @@ function sellerOf(row: any) {
 async function verifiedUser(c: AppContext): Promise<UserRow | Response> {
   const user = await getAuthUser(c);
   if (!user) return c.json({ error: 'Please log in to continue.' }, 401);
-  if (!user.email_verified) return c.json({ error: 'Please verify your college email first.' }, 403);
+  if (!user.email_verified) return c.json({ error: 'Please verify your email first.' }, 403);
   return user;
 }
 
@@ -397,7 +421,7 @@ app.post('/api/auth/signup', async (c) => {
     return c.json({ error: 'All fields are required.' }, 400);
   }
   if (!isAllowedEmail(c.env, collegeEmail)) {
-    return c.json({ error: 'Use a valid college email (.edu or .ac.in).' }, 400);
+    return c.json({ error: 'Please enter a valid email address.' }, 400);
   }
   if (!emailConfigured(c.env)) {
     return c.json({ error: 'Email verification is not configured on the server yet.' }, 503);
@@ -453,7 +477,7 @@ app.post('/api/auth/signup', async (c) => {
       token,
       user: user ? userToDict(user) : null,
       ...delivery,
-      message: emailError || 'Account created. Check your college email for the verification code.',
+      message: emailError || 'Account created. Check your email for the verification code.',
     },
     201
   );
@@ -465,7 +489,7 @@ app.post('/api/auth/send-otp', async (c) => {
   const collegeEmail = String(json.collegeEmail || '').trim().toLowerCase();
 
   if (!isAllowedEmail(c.env, collegeEmail)) {
-    return c.json({ error: 'Invalid college email.' }, 400);
+    return c.json({ error: 'Invalid email address.' }, 400);
   }
 
   const user = await c.env.DB.prepare('SELECT id FROM users WHERE college_email = ?')
@@ -492,7 +516,7 @@ app.post('/api/auth/send-otp', async (c) => {
   await storeOtp(c.env.DB, collegeEmail, otp, now);
   try {
     const delivery = await deliverOtp(c.env, collegeEmail, otp);
-    return c.json({ message: 'Verification code sent to your college email.', ...delivery });
+    return c.json({ message: 'Verification code sent to your email.', ...delivery });
   } catch {
     return c.json({ error: 'Could not send the email. Please try again shortly.' }, 502);
   }

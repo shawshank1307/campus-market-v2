@@ -32,6 +32,11 @@ check(/at least 8/.test(await handle("/api/auth/signup", { method: "POST", body:
 
 const A = await user("a"), B = await user("b"), C = await user("c"), D = await user("d");
 check(A.token && D.token, "sign up + verify");
+const gmailForm = new FormData();
+for (const [k, v] of Object.entries({ name: "Gmail User", rollNumber: "RGMAIL", phone: "9876543210", collegeEmail: "student@gmail.com", campus: "Main", password: "secret123" })) gmailForm.append(k, v);
+gmailForm.append("idCard", new File(["x"], "id.jpg", { type: "image/jpeg" }));
+const gRes = await handle("/api/auth/signup", { method: "POST", body: gmailForm });
+check(Boolean(gRes.token && gRes.demoOtp), "gmail address allowed for signup");
 check(/Incorrect/.test(await err(null, "/api/auth/login", "POST", { collegeEmail: A.email, password: "wrongpass1" })), "wrong password rejected");
 check(!!(await call(null, "/api/auth/login", "POST", { collegeEmail: A.email, password: "secret123" })).token, "correct password logs in");
 check(!JSON.stringify(store).includes("secret123"), "passwords are never stored in plain text");
